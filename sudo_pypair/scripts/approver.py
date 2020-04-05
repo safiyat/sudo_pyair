@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import json
 import os
 import sys
@@ -33,4 +35,3 @@ with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as sock:
     sock.connect(socket_file)
     # sock.sendall(bytes(json.dumps({"test": "Okay"}), "utf-8"))
     sock.sendall(bytes(json.dumps({"randnum": int(argv[3])}), "utf-8"))
-
