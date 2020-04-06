@@ -20,10 +20,11 @@ The approver `bridget` then runs the command `approve_sudo` followed by the tupl
 Install these scripts in the following locations:
 
 ```
-+--------------------------------------+-------------------------------+
-| sudo_pypair/scripts/python_pam.py    | /opt/python_pam_server.py     |
-| sudo_pypair/scripts/approver.py      | /usr/local/bin/approve_sudo   |
-+----------------------------------------------------------------------+
++-------------------------------------------------+--------------------------------------+
+| sudo_pypair/scripts/python_pam.py               | /opt/python_pam_server.py            |
+| sudo_pypair/scripts/approver.py                 | /usr/local/bin/approve_sudo          |
+| sudo_pypair/scripts/start_shared_screen.sh      | /usr/local/bin/start_shared_screen   |
++-------------------------------------------------+--------------------------------------+
 ```
 
 
@@ -42,3 +43,10 @@ The configuration options are described as follows:
 - **debug** - A flag to enable debug logging. Valid values: True, False. Default: False.
 - **approver_user** - Name of the user(s) who can approve the requests for elevated privileges. Accepts comma-separated values.
 - **approver_group** - Name of the group(s), users of whose can approve the requests for elevated privileges. Accepts comma-separated values.
+
+
+## To Do
+
+1. Implement the CSV of users and groups.
+2. Implement the CSV of users and group that can bypass security.
+3. Logging per user and global.
