@@ -33,6 +33,8 @@ Modify the file at `/etc/pam.d/sudo`.
 In the `auth` section of the file, add the following line above all other auth lines:
     `auth       sufficient pam_python.so /opt/python_pam.py config_key1=config_value1 config_key2=config_value2 config_key3=config_value3 ...`
 
+Also, remove or comment the line `@include common-auth`.
+
 Configuration is described in the section below.
 
 
