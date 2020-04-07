@@ -133,7 +133,6 @@ def get_approval(socket_file):
 
     answer = ''
     while answer not in ['yes', 'no', 'hold']:
-        print(command_info)
         answer = input(question)
 
     translation_table = {'yes': True, 'no': False, 'hold': None}
@@ -146,7 +145,6 @@ def write_to_socket(socket_file, randnum):
         # print("Connecting to %s" % socket_file)
         sock.connect(socket_file)
         # sock.sendall(bytes(json.dumps({"test": "Okay"}), "utf-8"))
-        print('Writing: %s' % randnum)
         sock.sendall(bytes(json.dumps({'randnum': int(randnum)}), 'utf-8'))
 
 
@@ -174,10 +172,8 @@ def main():
     approval = get_approval(socket_file)
 
     if approval:
-        print('Approved.')
         write_to_socket(socket_file, randnum)
     elif approval is False:
-        print('Not approved.')
         write_to_socket(socket_file, '0')
     else:
         print('Request on hold.')
