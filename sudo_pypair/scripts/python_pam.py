@@ -1,17 +1,21 @@
 # -*- coding: utf-8 -*-
 
+from __future__ import print_function
 import getpass
 import grp
 import json
 import os
 import passlib.hash
+import pty
 import pwd
 import random
 import requests
-import sys
+import shlex
 import SocketServer
 import stat
+import sys
 import syslog
+import subprocess
 import tempfile
 import time
 import traceback
@@ -152,6 +156,43 @@ def gen_id(seed):
     return id
 
 
+def run_command(cmd, env=None, stdin=None, current_working_directory=None):
+    stdout_fd, stdout_fn = tempfile.mkstemp()
+    stderr_fd, stderr_fn = tempfile.mkstemp()
+
+    master, slave = pty.openpty()
+    popen = subprocess.Popen(
+        shlex.split(cmd), preexec_fn=os.setsid, shell=False,
+        stdin=slave, stdout=stdout_fd, stderr=stderr_fd,
+        cwd=current_working_directory, env=env)
+    if stdin is not None:
+        popen.stdin.write(stdin)
+    rc = popen.wait()
+
+    with open(stdout_fn, 'r') as fp:
+        stdout = fp.read()
+
+    with open(stderr_fn, 'r') as fp:
+        stderr = fp.read()
+
+    return rc, stdout, stderr
+
+
+def get_command_from_pid(pid):
+    command = run_command('ps -o args= %s' % pid)[1].strip()
+    return command
+
+
+def check_if_invoked_from_screen():
+    shell_pid = run_command('ps -o ppid= %s' % os.getpid())[1].strip()
+    screen_pid = run_command('ps -o ppid= %s' % shell_pid)[1].strip()
+
+    command = get_command_from_pid(screen_pid)
+    if command.split()[0] != 'SCREEN':
+        return False
+    return True
+
+
 class SudoApprovalSeekServer(SocketServer.UnixStreamServer):
     def _handle_request_noblock(self):
         result = None
@@ -271,6 +312,9 @@ def authenticate(pamh, flags, argv):
             # inspect_object(pamh)
 
             # log("env: %s" % str(pamh.env.keys()))
+            if not check_if_invoked_from_screen():
+                print("Request for sudo not raised from a screen session!", file=sys.stderr)
+                return pamh.PAM_AUTH_ERR
 
             server, message = setup_approve(pamh, flags, config)
 
