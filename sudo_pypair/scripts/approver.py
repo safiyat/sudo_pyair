@@ -83,7 +83,11 @@ def get_command_from_pid(pid):
 def get_command_from_socket_file(socket_file):
     request_pid = get_pid_from_socket_file(socket_file)
     shell_pid = getoutput('ps -o ppid= %s' % request_pid).strip()
+    if shell_pid == '1':
+        return None
     screen_pid = getoutput('ps -o ppid= %s' % shell_pid).strip()
+    if screen_pid == '1':
+        return None
 
     command = get_command_from_pid(screen_pid)
     return command
@@ -147,9 +151,43 @@ def write_to_socket(socket_file, randnum):
         # sock.sendall(bytes(json.dumps({"test": "Okay"}), "utf-8"))
         sock.sendall(bytes(json.dumps({'randnum': int(randnum)}), 'utf-8'))
 
+def get_screen_name(approval_code):
+    """
+    This method is here only for usage from the shell.
+
+    :param approval_code: A string of three space separated numbers.
+    """
+    argv = approval_code.split()
+    if len(argv) != NO_OF_ARGS:
+        print('Invalid usage. Three arguments required.', file=sys.stderr)
+        sys.exit(1)
+    session_id = argv[0]
+    pid = argv[1]
+    socket_file = get_socketfile_path(session_id, pid)
+    if not socket_file_exists(socket_file):
+        print('Incorrect arguments. '
+              'No session using this approval code exists.', file=sys.stderr)
+        sys.exit(1)
+
+    if not socket_file_is_valid(socket_file):
+        sys.exit(1)
+
+    command = get_command_from_socket_file(socket_file)
+    if command is None:
+        print('No screen session with this approval code exists.', file=sys.stderr)
+        exit(1)
+    screen_name = command.split()[-1]
+    requester_user = screen_name.split('-')[0]
+
+    print('%s/%s' % (requester_user, screen_name))
+
 
 def main():
     argv = sys.argv
+
+    if len(argv) == NO_OF_ARGS:
+        get_screen_name(argv[-1])
+        return
 
     if len(argv) != NO_OF_ARGS + 1:
         print('Invalid usage.', file=sys.stderr)
@@ -162,7 +200,7 @@ def main():
     socket_file = get_socketfile_path(session_id, pid)
 
     if not socket_file_exists(socket_file):
-        print('Incorrect arguments. '
+        print('Invalid arguments. '
               'No session using this approval code exists.', file=sys.stderr)
         sys.exit(1)
 
@@ -173,10 +211,15 @@ def main():
 
     if approval:
         write_to_socket(socket_file, randnum)
+        # print('Approved.')
+        return 11
     elif approval is False:
         write_to_socket(socket_file, '0')
+        # print('Declined.')
+        return 22
     else:
         print('Request on hold.')
+        return 33
 
 
 if __name__ == '__main__':
