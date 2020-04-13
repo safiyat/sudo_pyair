@@ -9,6 +9,7 @@ import socket
 import stat
 from subprocess import getoutput
 import sys
+import syslog
 import tempfile
 
 
@@ -41,6 +42,19 @@ PROMPT = """
 
 
 NO_OF_ARGS = 3
+
+
+def log(string, requesting_uid, mode="a"):
+
+    updated_string = "(user: %s) " % pwd.getpwuid(requesting_uid).pw_name + string
+
+    # If you want /var/log/auth.log
+    syslog.syslog(syslog.LOG_INFO, updated_string)
+
+    # import datetime
+    # with open("/tmp/tmp", mode) as fp:
+    #     fp.write("%s: %s\n\n" % (str(datetime.datetime.now()), string))
+
 
 def inspect_object(object_to_inspect):
     print('*' * 80)
@@ -106,14 +120,20 @@ def get_screen_name_from_requesting_uid(requesting_uid):
 def socket_file_is_valid(socket_file, requesting_uid):
     socket_stat = os.stat(socket_file)
     # Check if permissions are sane
-    if socket_stat.st_uid != os.geteuid() and socket_stat.st_gid != os.getegid():
+    if socket_stat.st_uid != os.geteuid():
         print('You are not the designated approver for this request.', file=sys.stderr)
+        log('Undesginated user "%s" attempted to approve the request "%s".' %
+                (getpass.getuser(), ' '.join(sys.argv[-3:])),
+            requesting_uid=requesting_uid)
         return False
     # Check if originated in a shared screen session
     # command = get_command_from_socket_file(socket_file)
 
     if not get_screen_name_from_requesting_uid(requesting_uid):
         print('This request was not invoked in a shared screen session.', file=sys.stderr)
+        log('User "%s" attempted to approve the request "%s" which was not invoked in a shared screen.' %
+                (getpass.getuser(), ' '.join(argv[-3:])),
+            requesting_uid=requesting_uid)
         return False
     return True
 
@@ -181,6 +201,8 @@ def get_screen_name(approval_code):
 def main():
     argv = sys.argv
 
+    syslog.openlog(ident='sudo', facility=syslog.LOG_AUTH)
+
     if len(argv) == NO_OF_ARGS:
         get_screen_name(argv[-1])
         return
@@ -209,13 +231,22 @@ def main():
     if approval:
         write_to_socket(socket_file, randnum)
         # print('Approved.')
+        log('Request with approval codes "%s" approved by %s.' %
+                (' '.join(argv[-3:]), getpass.getuser()),
+            requesting_uid=requesting_uid)
         return 11
     elif approval is False:
         write_to_socket(socket_file, '0')
         # print('Declined.')
+        log('Request with approval codes "%s" declined by %s.' %
+                (' '.join(argv[-3:]), getpass.getuser()),
+            requesting_uid=requesting_uid)
         return 22
     else:
         print('Request on hold.')
+        log('Request with approval codes "%s" put on hold by %s.' %
+                (' '.join(argv[-3:]), getpass.getuser()),
+            requesting_uid=requesting_uid)
         return 33
 
 

@@ -244,7 +244,7 @@ def setup_approval_server(id, pid, uid=-1, gid=-1):
     server = SudoApprovalSeekServer(socket_file, None)
     log("Setting uid: %d and gid: %d for socket file %s." % (uid, gid, socket_file))
     os.chown(socket_file, uid, gid)
-    os.chmod(socket_file, stat.S_IWUSR | stat.S_IWGRP)
+    os.chmod(socket_file, stat.S_IWUSR)
     return server
 
 def setup_approve(pamh, flags, config):
@@ -254,10 +254,11 @@ def setup_approve(pamh, flags, config):
     log("Generated ID-pid: %s-%s" % (str(session_id), str(pid)))
 
     command = get_screen_command()
+    approver_user = command.split()[-1].split('-')[1]
     # approver_user = config.get('approver_user', 'root')
     approver_group = config.get('approver_group', 'root')
-    # uid = pwd.getpwnam(approver_user).pw_uid
-    uid = ''
+
+    uid = pwd.getpwnam(approver_user).pw_uid
     gid = grp.getgrnam(approver_group).gr_gid
     server = setup_approval_server(session_id, pid, uid=uid, gid=gid)
 
@@ -334,6 +335,7 @@ def authenticate(pamh, flags, argv):
 
             if debug:
                 log("Approval code for user %s: %s" % (pamh.user, approval_code))
+                log("Command invoked: %s" % get_command_from_pid(os.getpid()))
 
             print(PROMPT.format(approval_code.center(76)).strip())
 
