@@ -3,6 +3,7 @@ from datetime import datetime, timedelta, timezone
 import getpass
 import json
 import os
+import pwd
 import re
 import socket
 import stat
@@ -88,59 +89,56 @@ def get_command_from_socket_file(socket_file):
     screen_pid = getoutput('ps -o ppid= %s' % shell_pid).strip()
     if screen_pid == '1':
         return None
-
     command = get_command_from_pid(screen_pid)
     return command
 
 
-def socket_file_is_valid(socket_file):
+def get_screen_name_from_requesting_uid(requesting_uid):
+    requesting_user = pwd.getpwuid(requesting_uid).pw_name
+    self_username = getpass.getuser()
+    screen_list = getoutput('screen -list %s/' % requesting_user)
+    screens = [x for x in screen_list.split() if '%s-%s-' % (requesting_user, self_username) in x]
+    if screens:
+        return screens[-1]
+    return None
+
+
+def socket_file_is_valid(socket_file, requesting_uid):
     socket_stat = os.stat(socket_file)
     # Check if permissions are sane
-    if socket_stat.st_uid != os.geteuid() and socket_stat.st_gid != os.geteuid():
+    if socket_stat.st_uid != os.geteuid() and socket_stat.st_gid != os.getegid():
         print('You are not the designated approver for this request.', file=sys.stderr)
         return False
-
     # Check if originated in a shared screen session
-    command = get_command_from_socket_file(socket_file)
+    # command = get_command_from_socket_file(socket_file)
 
-    self_username = getpass.getuser()
-
-    if '-%s-' % self_username not in command:
+    if not get_screen_name_from_requesting_uid(requesting_uid):
         print('This request was not invoked in a shared screen session.', file=sys.stderr)
         return False
-
     return True
 
 
-def get_approval(socket_file):
-    command = get_command_from_socket_file(socket_file)
-    screen_name = command.split()[-1]
-    requester_user, _, screen_unixtime = screen_name.split('-')
+def get_approval(socket_file, requesting_uid):
+    screen_name = get_screen_name_from_requesting_uid(requesting_uid)
+    pid_requester_user, _, screen_unixtime = screen_name.split('-')
     timestamp = datetime.fromtimestamp(
         int(screen_unixtime),
         tz=timezone(timedelta(0))).strftime('%c %Z')
+    pid, requester_user = pid_requester_user.split('.')
     command_invoked = get_command_from_pid(get_pid_from_socket_file(socket_file))
     command_invoked = command_invoked[:37] + '...' if len(command_invoked) > 40 else command_invoked
     full_screen_name = '%s/%s' % (requester_user, screen_name)
-
     user_info = 'user:'.rjust(17).ljust(36) + requester_user.ljust(40)
     time_info = 'screen invocation time:'.rjust(35).ljust(36) + timestamp.ljust(40)
     command_info = 'command invoked:'.rjust(28).ljust(36) + command_invoked.ljust(40)
-
     screen_join_cmd = ('screen -x %s' % full_screen_name).center(76)
-
     prompt = PROMPT.format(user_info, time_info, command_info, screen_join_cmd)
-
     print(prompt.strip())
-
     question = 'Approve user\'s session? (yes/no/hold): '
-
     answer = ''
     while answer not in ['yes', 'no', 'hold']:
         answer = input(question)
-
     translation_table = {'yes': True, 'no': False, 'hold': None}
-
     return translation_table[answer]
 
 
@@ -163,22 +161,20 @@ def get_screen_name(approval_code):
         sys.exit(1)
     session_id = argv[0]
     pid = argv[1]
+    randnum = argv[2]
+    requesting_uid = int(randnum) - int(pid) - int(session_id)
     socket_file = get_socketfile_path(session_id, pid)
     if not socket_file_exists(socket_file):
         print('Incorrect arguments. '
               'No session using this approval code exists.', file=sys.stderr)
         sys.exit(1)
-
-    if not socket_file_is_valid(socket_file):
+    if not socket_file_is_valid(socket_file, requesting_uid):
         sys.exit(1)
-
-    command = get_command_from_socket_file(socket_file)
-    if command is None:
+    screen_name = get_screen_name_from_requesting_uid(requesting_uid)
+    if screen_name is None:
         print('No screen session with this approval code exists.', file=sys.stderr)
         exit(1)
-    screen_name = command.split()[-1]
-    requester_user = screen_name.split('-')[0]
-
+    requester_user = pwd.getpwuid(requesting_uid).pw_name
     print('%s/%s' % (requester_user, screen_name))
 
 
@@ -196,6 +192,7 @@ def main():
     session_id = argv[1]
     pid = argv[2]
     randnum = argv[3]
+    requesting_uid = int(randnum) - int(pid) - int(session_id)
 
     socket_file = get_socketfile_path(session_id, pid)
 
@@ -204,10 +201,10 @@ def main():
               'No session using this approval code exists.', file=sys.stderr)
         sys.exit(1)
 
-    if not socket_file_is_valid(socket_file):
+    if not socket_file_is_valid(socket_file, requesting_uid):
         sys.exit(1)
 
-    approval = get_approval(socket_file)
+    approval = get_approval(socket_file, requesting_uid)
 
     if approval:
         write_to_socket(socket_file, randnum)

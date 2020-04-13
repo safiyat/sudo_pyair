@@ -13,6 +13,7 @@ import requests
 import shlex
 import SocketServer
 import stat
+
 import sys
 import syslog
 import subprocess
@@ -183,11 +184,16 @@ def get_command_from_pid(pid):
     return command
 
 
-def check_if_invoked_from_screen():
+def get_screen_command():
     shell_pid = run_command('ps -o ppid= %s' % os.getpid())[1].strip()
     screen_pid = run_command('ps -o ppid= %s' % shell_pid)[1].strip()
 
     command = get_command_from_pid(screen_pid)
+    return command
+
+
+def check_if_invoked_from_screen():
+    command = get_screen_command()
     if command.split()[0] != 'SCREEN':
         return False
     return True
@@ -247,13 +253,15 @@ def setup_approve(pamh, flags, config):
     pid = os.getpid()
     log("Generated ID-pid: %s-%s" % (str(session_id), str(pid)))
 
-    approver_user = config.get('approver_user', 'root')
+    command = get_screen_command()
+    # approver_user = config.get('approver_user', 'root')
     approver_group = config.get('approver_group', 'root')
-    uid = pwd.getpwnam(approver_user).pw_uid
+    # uid = pwd.getpwnam(approver_user).pw_uid
+    uid = ''
     gid = grp.getgrnam(approver_group).gr_gid
     server = setup_approval_server(session_id, pid, uid=uid, gid=gid)
 
-    return server, {'id': session_id, 'pid': pid, 'user': pamh.get_user(), 'randnum': gen_id(pamh.pamh + session_id)}
+    return server, {'id': session_id, 'pid': pid, 'user': pamh.get_user(), 'randnum': session_id + pid + os.getuid()}
 
 
 def wait_for_approve(pamh, server, randnum):

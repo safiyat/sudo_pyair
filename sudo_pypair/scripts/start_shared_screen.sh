@@ -15,10 +15,10 @@ APPROVER_USERNAME="${1}"
 SCREEN_NAME="$(whoami)-${APPROVER_USERNAME}-$(date +%s)"
 
 function get_valid_approvers() {
-    approver_user=$(grep -o -e 'approver_user=\S*' /etc/pam.d/sudo | cut -d= -f2)
+    # approver_user=$(grep -o -e 'approver_user=\S*' /etc/pam.d/sudo | cut -d= -f2)
     approver_group=$(grep -o -e 'approver_group=\S*' /etc/pam.d/sudo | cut -d= -f2)
 
-    all_users=$(getent passwd | cut -d: -f1)
+    all_users=$(getent passwd | cut -d: -f1 | grep -v -e root -e $(whoami))
     for user in ${all_users}; do
         user_in_groups=$(groups ${user} 2> /dev/null | cut -d: -f2 | xargs | tr ' ' '|')
         if [[ ${approver_group} =~ ^(${user_in_groups})$ ]]; then
