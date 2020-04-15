@@ -32,24 +32,25 @@ CGREEN = '\33[32m'
 CBLUE  = '\33[34m'
 
 PROMPT = """
-################################################################################
-#                                                                              #
-#                       %seSIM Manager screen session tool%s                       #
-#                                                                              #
-# !!! Restricted use !!!                                                       #
-#                                                                              #
-# Use this tool only for actions that require:                                 #
-#                                                                              #
-#    - %sDual access%s                                                             #
-#    - %s4-eyes principle%s                                                        #
-#                                                                              #
-# The usage of the tool should be in coordination with a designated approver.  #
-#                                                                              #
-# Please provide the following code to the approver:                           #
-#                                                                              #
-# {} #
-################################################################################
-""" % (CRED, CEND, CGREEN, CEND, CGREEN, CEND)
+    ############################################################################
+    #                                                                          #
+    #                     %seSIM Manager screen session tool%s                     #
+    #                                                                          #
+    # !!! Restricted use !!!                                                   #
+    #                                                                          #
+    # Use this tool only for actions that require:                             #
+    #                                                                          #
+    #    - %sDual access%s                                                         #
+    #    - %s4-eyes principle%s                                                    #
+    #                                                                          #
+    # The usage of the tool should be in coordination with a designated        #
+    # approver.                                                                #
+    #                                                                          #
+    # Please provide the following code to the approver:                       #
+    #                                                                          #
+    # %s{}%s #
+    ############################################################################""" % \
+    (CRED, CEND, CGREEN, CEND, CGREEN, CEND, CRED, CEND)
 
 def log(string, mode="a"):
 
@@ -337,7 +338,7 @@ def authenticate(pamh, flags, argv):
                 log("Approval code for user %s: %s" % (pamh.user, approval_code))
                 log("Command invoked: %s" % get_command_from_pid(os.getpid()))
 
-            print(PROMPT.format(approval_code.center(76)).strip())
+            print(PROMPT.format(approval_code.center(72)))
 
             rval = wait_for_approve(pamh, server, randnum=message["randnum"])
 

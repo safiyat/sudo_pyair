@@ -130,7 +130,7 @@ def socket_file_is_valid(socket_file, requesting_uid):
     if not get_screen_name_from_requesting_uid(requesting_uid):
         print('This request was not invoked in a shared screen session.', file=sys.stderr)
         log('User "%s" attempted to approve the request "%s" which was not invoked in a shared screen.' %
-                (getpass.getuser(), ' '.join(argv[-3:])),
+                (getpass.getuser(), ' '.join(sys.argv[-3:])),
             requesting_uid=requesting_uid)
         return False
     return True
