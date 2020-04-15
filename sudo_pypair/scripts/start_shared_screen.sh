@@ -54,6 +54,7 @@ function check_args() {
 
 function start_screen() {
     screen -d -m -S "${SCREEN_NAME}"
+    screen -S "${SCREEN_NAME}" -X vbell off
 }
 
 function enable_multiuser() {

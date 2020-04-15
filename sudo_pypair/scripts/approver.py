@@ -34,11 +34,9 @@ PROMPT = """
 # %s{}%s #
 # %s{}%s #
 # %s{}%s #
-# To join the session, run:                                                    #
-# %s{}%s #
 ################################################################################
 """ % (CRED, CEND, CGREEN, CEND, CGREEN, CEND, CBLUE, CEND, CBLUE, CEND, CBLUE,
-       CEND, CGREEN, CEND)
+       CEND)
 
 
 NO_OF_ARGS = 3
@@ -151,8 +149,7 @@ def get_approval(socket_file, requesting_uid):
     user_info = 'user:'.rjust(17).ljust(36) + requester_user.ljust(40)
     time_info = 'screen invocation time:'.rjust(35).ljust(36) + timestamp.ljust(40)
     command_info = 'command invoked:'.rjust(28).ljust(36) + command_invoked.ljust(40)
-    screen_join_cmd = ('screen -x %s' % full_screen_name).center(76)
-    prompt = PROMPT.format(user_info, time_info, command_info, screen_join_cmd)
+    prompt = PROMPT.format(user_info, time_info, command_info)
     print(prompt.strip())
     question = 'Approve user\'s session? (yes/no/hold): '
     answer = ''
