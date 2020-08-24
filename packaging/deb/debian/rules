@@ -1,0 +1,7 @@
+#!/usr/bin/make -f
+%:
+	dh $@
+override_dh_install:
+	dh_install sudo-pyair/usr/local/bin/ /usr/local/
+	dh_install sudo-pyair/opt/ /
+override_dh_usrlocal:

@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+
+##### Add a commented line to the file at /etc/pam.d/sudo
+awk -i inplace '/^.*auth.*/{$0="#"$0;}1' /etc/pam.d/sudo
+
+line="#auth       sufficient pam_python.so /opt/python_pam_server.py \
+    debug=True approver_group= exempted_users="
+
+# Prepend ${line} before the first occurence of `auth`.
+sed -i -e "1,/^.*auth.*/ {/^.*auth.*/i\
+    ${line}
+    }" /etc/pam.d/sudo
+
+
+##### Enable multi-user screen sharing feature.
+chmod u+s $(which screen)
+chmod 755 /var/run/screen

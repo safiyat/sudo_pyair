@@ -22,19 +22,24 @@ The approval can be made only by `bridget`, the designated approver. No other us
 
 Make sure that the packages `python_pam`, `python3` and `screen` are installed on your system.
 
-Caveat: Since `python2` has been discontinued, the approver script is written in `python3`. The python_pam server is written in `python2` since that is the version supported in `python_pam`.
+Caveat: Since `python2` has been discontinued, the approver script is written in `python3`. The python_pam_server is written in `python2` since that is the version supported in `python_pam`.
 
 Install these scripts in the following locations:
 
 ```
 +-------------------------------------------------+--------------------------------------+
-| sudo_pypair/scripts/python_pam.py               | /opt/python_pam_server.py            |
+| sudo_pypair/scripts/python_pam_server.py        | /opt/python_pam_server.py            |
 | sudo_pypair/scripts/approver.py                 | /opt/approver.py                     |
 | sudo_pypair/scripts/approver.sh                 | /usr/local/bin/approve               |
 | sudo_pypair/scripts/start_shared_screen.sh      | /usr/local/bin/start_shared_screen   |
 +-------------------------------------------------+--------------------------------------+
 ```
 
+Enable multi-user `screen` sharing feature. Run the following commands to enable it:
+```bash
+chmod u+s $(which screen)
+chmod 755 /var/run/screen
+```
 
 Modify the file at `/etc/pam.d/sudo`.
 

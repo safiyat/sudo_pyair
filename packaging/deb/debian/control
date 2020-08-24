@@ -1,0 +1,13 @@
+Source: sudo-pyair
+Maintainer: Md Safiyat Reza <safiyat.reza@ericsson.com>
+Section: misc
+Priority: optional
+Standards-Version: 3.9.2
+Build-Depends: debhelper (>= 9)
+
+Package: sudo-pyair
+Architecture: all
+Depends: screen, libpam-python, python3-minimal, python-passlib, python-requests
+Description: 4-eyes protocol for executing commands using sudo
+ A tool that implements 4-eyes protocol when executing commands in a 
+ privileged environment.
